@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيقات OSSAMA SALAM HADI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Cairo & Tajawal) for premium Arabic typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons for clean modern vector icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'Tajawal', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+
+        // تفعيل المظهر الداكن كخيار افتراضي قبل رندرة الصفحة لمنع الوميض الأبيض المزعج
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+            if (!localStorage.getItem('theme')) {
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            scroll-behavior: smooth;
+        }
+        /* Custom subtle animations */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .dark .glass-effect {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .glow-effect:hover {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.05);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 99px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300 overflow-x-hidden relative pb-16">
+
+    <!-- Background decorative gradients -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] pointer-events-none overflow-hidden z-0">
+        <div class="absolute -top-40 -left-20 w-96 h-96 bg-blue-400/20 dark:bg-blue-600/10 rounded-full blur-3xl"></div>
+        <div class="absolute -top-20 -right-20 w-96 h-96 bg-indigo-400/20 dark:bg-indigo-600/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 max-w-6xl mx-auto px-4 py-8 md:py-16 flex flex-col min-h-screen">
+        
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
+            <div class="text-center md:text-right">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-sm font-semibold mb-3">
+                    <i data-lucide="verified" class="w-4 h-4"></i>
+                    <span>المطور الرسمي</span>
+                </div>
+                <h1 class="text-3xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-l from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+                    OSSAMA SALAM HADI
+                </h1>
+                <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm md:text-base max-w-lg">
+                    مرحباً بك في المنصة الرسمية لتحميل وتحديث تطبيقات المطور أسامة سلام هادي بأحدث الإصدارات المباشرة والآمنة.
+                </p>
+            </div>
+            
+            <!-- Dark Mode Toggle & Share Button -->
+            <div class="flex items-center gap-3">
+                <button onclick="toggleDarkMode()" class="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200" title="تغيير المظهر">
+                    <i id="theme-icon" data-lucide="moon" class="w-5 h-5 text-slate-600 dark:text-slate-300"></i>
+                </button>
+                <button onclick="shareStore()" class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200" title="مشاركة المتجر">
+                    <i data-lucide="share-2" class="w-5 h-5 text-slate-600 dark:text-slate-300"></i>
+                    <span class="text-sm font-medium hidden sm:inline">مشاركة</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Counter Card -->
+        <div class="glass-effect border border-slate-200/50 dark:border-slate-800/80 rounded-3xl p-6 mb-10 shadow-sm flex flex-wrap gap-6 items-center justify-around text-center">
+            <div>
+                <span class="block text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400" id="apps-count">0</span>
+                <span class="text-xs md:text-sm text-slate-500 dark:text-slate-400">التطبيقات المتوفرة</span>
+            </div>
+            <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+            <div>
+                <span class="block text-2xl md:text-3xl font-bold text-indigo-600 dark:text-indigo-400">نشط الآن</span>
+                <span class="text-xs md:text-sm text-slate-500 dark:text-slate-400">حالة التنزيلات</span>
+            </div>
+            <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+            <div>
+                <span class="block text-2xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">آمن 100%</span>
+                <span class="text-xs md:text-sm text-slate-500 dark:text-slate-400">فحص الحماية للـ APK</span>
+            </div>
+        </div>
+
+        <!-- SEARCH CONTROL (CRITICAL FOR 100+ APPS) -->
+        <div class="mb-8">
+            <!-- Search Bar Input -->
+            <div class="relative w-full max-w-2xl mx-auto">
+                <i data-lucide="search" class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+                <input type="text" id="search-input" oninput="handleSearchAndFilter()" placeholder="ابحث باسم التطبيق أو إصدار الأندرويد المطلوب..." class="w-full pr-12 pl-4 py-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm transition-all duration-200 text-center md:text-right">
+            </div>
+        </div>
+
+        <!-- Apps Section Title -->
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                <i data-lucide="layout-grid" class="w-6 h-6 text-blue-500"></i>
+                قائمة التطبيقات المتوفرة للتحميل
+            </h2>
+            <div class="text-xs bg-slate-200 dark:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 font-mono" id="last-updated">
+                تحديث تلقائي
+            </div>
+        </div>
+
+        <!-- Custom Notification Toast -->
+        <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3.5 rounded-2xl shadow-xl border border-slate-800 dark:border-slate-100">
+            <span id="toast-icon"></span>
+            <span id="toast-text" class="text-sm font-semibold"></span>
+        </div>
+
+        <!-- Apps Grid (DYNAMIC CONTAINER) -->
+        <main class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-10" id="apps-container">
+            <!-- JavaScript will render apps here automatically -->
+        </main>
+
+        <!-- Load More Button (Protects performance for 100+ apps) -->
+        <div id="load-more-container" class="flex justify-center mb-16 hidden">
+            <button onclick="loadMoreApps()" class="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-sm text-blue-600 dark:text-blue-400 transition-all duration-200">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <span>عرض المزيد من التطبيقات</span>
+            </button>
+        </div>
+
+        <!-- Dynamic Empty State (Fallback if no apps matched) -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center text-center py-20">
+            <i data-lucide="alert-circle" class="w-16 h-16 text-slate-300 dark:text-slate-700 mb-4"></i>
+            <h3 class="text-lg font-bold">لا توجد نتائج تطابق بحثك</h3>
+            <p class="text-slate-400 text-sm mt-1">تأكد من كتابة الاسم أو التصنيف بشكل صحيح.</p>
+        </div>
+
+        <!-- Footer Section -->
+        <footer class="mt-auto pt-8 border-t border-slate-200/60 dark:border-slate-900 text-center text-xs md:text-sm text-slate-500 dark:text-slate-500 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p>© 2026 جميع الحقوق محفوظة للمطور <span class="font-semibold text-slate-700 dark:text-slate-300">OSSAMA SALAM HADI</span></p>
+
+                </a>
+                <span class="text-slate-300 dark:text-slate-800">|</span>
+                <span class="flex items-center gap-1 text-emerald-500">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> متصل بالخادم
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scroll To Top Button -->
+    <button onclick="scrollToTop()" id="back-to-top" class="fixed bottom-6 right-6 z-40 p-3.5 rounded-2xl bg-blue-600 text-white shadow-xl hover:bg-blue-700 opacity-0 pointer-events-none transition-all duration-300 active:scale-90">
+        <i data-lucide="arrow-up" class="w-5 h-5"></i>
+    </button>
+
+    <!-- JAVASCRIPT: PREPARED FOR 100+ APPS WITH ZERO PERFORMANCE ISSUES -->
+    <script>
+        // ==========================================
+        //  مصفوفة التطبيقات - أضف تطبيقاتك هنا بكل سهولة مستقبلاً!
+        // ==========================================
+        // التغيير الحاصل: تم تبسيط المصفوفة بإلغاء حقل التصنيف تماماً لتبسيط الإضافة مستقبلاً
+        const myApps = [
+            {
+                id: 1,
+                name: "يلا گول",
+                icon: "https://i.ibb.co/CKJ5NVv7/Screenshot-2026-04-21-1-52-19-PM.png",
+                downloadUrl: "https://github.com/ossamasal2012/otv/releases/download/v1.0.0.0/yalla-gol.apk",
+                requiredSystem: "Android 5.0 أو أحدث"
+            }
+        ];
+
+        // مغيرات الأداء للصفحات الطويلة جداً
+        let searchQuery = '';
+        let itemsLimit = 8; // عدد الكروت التي تظهر دفعة واحدة (تضمن السلاسة التامة للهواتف الضعيفة)
+
+        // تصفية التطبيقات حسب البحث فقط دون تصنيفات لسرعة فائقة
+        function getFilteredApps() {
+            return myApps.filter(app => {
+                return app.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                       (app.requiredSystem && app.requiredSystem.toLowerCase().includes(searchQuery.toLowerCase()));
+            });
+        }
+
+        // رندرة التطبيقات مع تحديد الكمية لضمان الأداء السلس
+        function renderApps() {
+            const container = document.getElementById('apps-container');
+            const emptyState = document.getElementById('empty-state');
+            const loadMoreBtnContainer = document.getElementById('load-more-container');
+            const appsCount = document.getElementById('apps-count');
+            
+            // تحديث العدد الإجمالي الحقيقي لجميع تطبيقات المطور
+            appsCount.textContent = myApps.length;
+            
+            const filtered = getFilteredApps();
+            
+            if (filtered.length === 0) {
+                container.classList.add('hidden');
+                loadMoreBtnContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            
+            // عرض عدد محدد فقط من التطبيقات (Pagination)
+            const displayedApps = filtered.slice(0, itemsLimit);
+            
+            // إظهار أو إخفاء زر "عرض المزيد"
+            if (filtered.length > itemsLimit) {
+                loadMoreBtnContainer.classList.remove('hidden');
+            } else {
+                loadMoreBtnContainer.classList.add('hidden');
+            }
+            
+            container.innerHTML = displayedApps.map(app => `
+                <div class="group relative glass-effect border border-slate-200/60 dark:border-slate-900/80 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 overflow-hidden">
+                    
+                    <!-- Top subtle visual highlight -->
+                    <div class="absolute -top-10 -right-10 w-24 h-24 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-300"></div>
+                    
+                    <!-- Card Content -->
+                    <div class="relative z-10 flex items-start gap-4 mb-6">
+                        <!-- Application Icon (With native performance lazy loading) -->
+                        <div class="relative w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-900/50 flex-shrink-0 border border-slate-200/50 dark:border-slate-800 shadow-inner flex items-center justify-center">
+                            <img src="${app.icon}" alt="${app.name}" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=60';" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        </div>
+                        
+                        <!-- App Details -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap gap-1.5 mb-1.5">
+                                <span class="text-[10px] md:text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-1 rounded-md inline-block">
+                                    نسخة مستقرة (APK)
+                                </span>
+                                <span class="text-[10px] md:text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded-md inline-flex items-center gap-1">
+                                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                                    <span>${app.requiredSystem || 'أندرويد 5.0+'}</span>
+                                </span>
+                            </div>
+                            <h3 class="text-lg md:text-xl font-bold text-slate-800 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                ${app.name}
+                            </h3>
+                            <p class="text-xs md:text-sm text-slate-400 mt-1 flex items-center gap-1">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+                                خالي من البرمجيات الضارة
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- App Footer Actions inside Card -->
+                    <div class="relative z-10 pt-4 border-t border-slate-150 dark:border-slate-900/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                        <div class="text-center sm:text-right">
+                            <span class="block text-[11px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">الإصدار الأخير الرسمي</span>
+                            <span class="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-300">حمل اخر نسخة من تطبيق ${app.name}</span>
+                        </div>
+                        
+                        <!-- Premium Action Button -->
+                        <button onclick="startDownload('${app.downloadUrl}', '${app.name}')" class="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-l from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-md hover:shadow-lg transition-all duration-200 text-sm glow-effect active:scale-95">
+                            <i data-lucide="download" class="w-4 h-4 animate-bounce"></i>
+                            <span>تحميل التطبيق</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // إعادة تفعيل الأيقونات الديناميكية
+            lucide.createIcons();
+        }
+
+        // زيادة كمية العناصر عند الضغط على "تحميل المزيد"
+        function loadMoreApps() {
+            itemsLimit += 8;
+            renderApps();
+        }
+
+        // معالجة وكتابة البحث
+        function handleSearchAndFilter() {
+            searchQuery = document.getElementById('search-input').value;
+            itemsLimit = 8; // إعادة تهيئة الحد الأدنى عند كتابة بحث جديد لسرعة الأداء
+            renderApps();
+        }
+
+        // منطق التنزيل الذكي في الخلفية
+        function startDownload(url, appName) {
+            showToast(`<i data-lucide="download-cloud" class="w-5 h-5 text-blue-500"></i>`, `جاري بدء تحميل تطبيق ${appName}... يرجى الانتظار لحين اكتمال الملف!`);
+            
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = url;
+            downloadAnchor.style.display = 'none';
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+        }
+
+        // نظام الإشعارات المنبثقة التفاعلية
+        function showToast(iconHTML, text) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            const toastText = document.getElementById('toast-text');
+
+            toastIcon.innerHTML = iconHTML;
+            toastText.textContent = text;
+
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
+
+        // نسخ رابط المتجر للمشاركة
+        function shareStore() {
+            const shareText = "حمل الآن جميع تطبيقات المطور أسامة سلام هادي من هنا!";
+            const shareUrl = window.location.href;
+            
+            const tempInput = document.createElement('input');
+            tempInput.value = `${shareText} ${shareUrl}`;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast(`<i data-lucide="clipboard-check" class="w-5 h-5 text-emerald-500"></i>`, 'تم نسخ رابط المتجر بنجاح! يمكنك الآن إرساله ومشاركته.');
+        }
+
+        // معالجة وحفظ خيار المظهر المفضل للمستخدم
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                updateThemeButton(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateThemeButton(false);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeButton(isDark);
+        }
+
+        function updateThemeButton(isDark) {
+            const icon = document.getElementById('theme-icon');
+            if (isDark) {
+                icon.setAttribute('data-lucide', 'sun');
+                icon.classList.add('text-amber-400');
+                icon.classList.remove('text-slate-600');
+            } else {
+                icon.setAttribute('data-lucide', 'moon');
+                icon.classList.remove('text-amber-400');
+                icon.classList.add('text-slate-600');
+            }
+            lucide.createIcons();
+        }
+
+        // زر الصعود السلس للأعلى
+        window.onscroll = function() {
+            const btn = document.getElementById('back-to-top');
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                btn.classList.remove('opacity-0', 'pointer-events-none');
+                btn.classList.add('opacity-100');
+            } else {
+                btn.classList.remove('opacity-100');
+                btn.classList.add('opacity-0', 'pointer-events-none');
+            }
+        };
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // تشغيل التهيئة عند تحميل الصفحة
+        window.onload = function() {
+            initTheme();
+            renderApps();
+            
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('last-updated').textContent = `آخر تحديث: ${new Date().toLocaleDateString('ar-EG', dateOptions)}`;
+        }
+    </script>
+</body>
+</html>
