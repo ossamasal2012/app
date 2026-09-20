@@ -23,7 +23,7 @@
       "updated": "2026-09-10"
     },
     {
-      "id": "weather"
+      "id": "weather",
       "name": "الطقس-weather",
       "icon": "https://raw.githubusercontent.com/ossamasal2012/weather/refs/heads/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
       "downloadUrl": "https://github.com/ossamasal2012/weather/releases/download/latest/weather.apk",
