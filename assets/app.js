@@ -9,17 +9,17 @@ const COOLDOWN_MS = 7000; // بعد الضغط على تحميل: تُتجاهل
 const STATS_EVERY_MS = 45000;
 const WATCH_EVERY_MS = 8000;
 const WATCH_MAX_MS = 6 * 60 * 1000;
-const K = { theme: 'os_theme', privacy: 'os_privacy', did: 'os_did', seen: 'os_seen' };
+const K = { theme: 'os_theme', did: 'os_did', seen: 'os_seen' };
 const TOKEN_RE = /^[0-9a-f]{32}\.[A-Za-z0-9_-]{22}$/;
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;
 const HEX64_RE = /^[a-f0-9]{64}$/i;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MOBILE = window.matchMedia ? matchMedia('(max-width: 640px)') : { matches: false };
 
 const state = {
   apps: [],
   byId: new Map(),
-  site: { github: 'https://github.com/ossamasal2012' },
   q: '',
   sort: '', // فارغ = بترتيب apps.json كما وضعه المطوّر
   limit: PAGE_SIZE,
@@ -28,7 +28,6 @@ const state = {
   seen: new Set(), // التطبيقات التي حمّلها هذا الجهاز (حسب الخادم/الذاكرة المحلية)
   dl: new Map(), // appId → { ts }
   watching: new Set(),
-  privacy: 'standard',
   statsAt: 0,
   opener: null,
 };
@@ -97,6 +96,8 @@ function norm(s) {
     .replace(/\s+/g, ' ').trim();
 }
 
+// المعرّف يُوحَّد تلقائياً إلى أحرف إنجليزية صغيرة وأرقام وشرطة (Weather → weather) كي لا يُهمَل التطبيق بسبب حرف كبير
+const normId = (v) => String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 const clean = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max) : '');
 
 function safeUrl(v, { allowRelative = false, allowLocalHttp = false } = {}) {
@@ -157,12 +158,6 @@ function applyTheme(t, persist) {
 }
 
 // ───────────────────────── 3) الخصوصية وهوية الجهاز ─────────────────────────
-function getPrivacy() {
-  const v = store.get(K.privacy);
-  if (v === 'standard' || v === 'minimal' || v === 'off') return v;
-  return navigator.globalPrivacyControl === true ? 'off' : 'standard'; // نحترم إشارة GPC ما لم يختر المستخدم غير ذلك
-}
-
 // معرّف الجهاز الموقّع يُحفَظ في ثلاثة أماكن؛ إن مُسح أحدها يُرمَّم من الآخر
 const cookie = {
   get(name) {
@@ -172,7 +167,6 @@ const cookie = {
   set(name, value, days) {
     document.cookie = `${name}=${encodeURIComponent(value)}; Max-Age=${days * 86400}; Path=/; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
   },
-  del(name) { document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`; },
 };
 
 const idb = {
@@ -195,7 +189,6 @@ const idb = {
   },
   get(k) { return this.run('readonly', (s) => s.get(k)); },
   set(k, v) { return this.run('readwrite', (s) => s.put(v, k)); },
-  del(k) { return this.run('readwrite', (s) => s.delete(k)); },
 };
 
 const Identity = {
@@ -213,11 +206,6 @@ const Identity = {
     store.set(K.did, tok);
     try { cookie.set(K.did, tok, 400); } catch { /* تجاهل */ }
     try { await idb.set(K.did, tok); } catch { /* تجاهل */ }
-  },
-  async clear() {
-    store.del(K.did);
-    try { cookie.del(K.did); } catch { /* تجاهل */ }
-    try { await idb.del(K.did); } catch { /* تجاهل */ }
   },
 };
 
@@ -257,14 +245,12 @@ function fingerprint() {
   return fpPromise;
 }
 
-async function identityPayload(mode) {
+async function identityPayload() {
   const body = {};
   const t = await Identity.read();
   if (t) body.t = t;
-  if (mode === 'standard') {
-    const fp = await fingerprint();
-    if (fp) { body.f = fp.f; body.q = fp.q; }
-  }
+  const fp = await fingerprint();
+  if (fp) { body.f = fp.f; body.q = fp.q; }
   return body;
 }
 
@@ -291,10 +277,11 @@ const Api = {
 // ───────────────────────── 5) الكتالوج ─────────────────────────
 function normalizeApp(a, order) {
   if (!a || typeof a !== 'object') return null;
-  const id = clean(a.id, 40);
+  const id = normId(a.id);
   const name = clean(a.name, 60);
-  const url = safeUrl(a.downloadUrl);
-  if (!ID_RE.test(id) || !name || !url) { console.warn('[المتجر] تطبيق مُهمَل (id/name/downloadUrl غير صالح):', a && a.id); return null; }
+  const url = safeUrl(a.downloadUrl); // اختياري: الأفضل إخفاؤه (يوضع في متغيّر SOURCES داخل الـ Worker)
+  if (!ID_RE.test(id) || !name) { console.warn('[المتجر] تطبيق مُهمَل: id يجب أن يحوي أحرفاً إنجليزية أو أرقاماً، و name مطلوب:', a && a.id); return null; }
+  if (id !== String(a.id).trim()) console.info('[المتجر] تم توحيد المعرّف', JSON.stringify(a.id), '←', id);
   const list = (v, max, len) => (Array.isArray(v) ? v.map((x) => clean(x, len)).filter(Boolean).slice(0, max) : []);
   const sizeBytes = Number(a.sizeBytes) > 0 ? Number(a.sizeBytes) : 0;
   const cert = clean(a.certSha256, 100).replace(/[:\s]/g, '');
@@ -330,8 +317,7 @@ async function loadCatalog() {
     byId.set(app.id, app); apps.push(app);
   });
   const api = safeUrl(data && data.api ? String(data.api) : '', { allowLocalHttp: true }).replace(/\/+$/, '');
-  const gh = safeUrl(data && data.site && data.site.github);
-  return { apps, byId, api, github: gh };
+  return { apps, byId, api };
 }
 
 // ───────────────────────── 6) العدّاد الدوّار ─────────────────────────
@@ -399,7 +385,9 @@ function getView() {
 
 function dlButton(app, extra = '') {
   return h('button', { class: 'btn btn--cta ' + extra, type: 'button', 'data-dl': app.id, 'data-act': 'download' },
-    icon('download', 'btn__ic'), h('span', { class: 'btn__label', text: 'تحميل التطبيق' }));
+    icon('download', 'btn__ic'),
+    h('span', { class: 'btn__label', text: 'تحميل التطبيق' }),
+    h('span', { class: 'btn__short', text: 'تحميل' }));
 }
 
 function renderCard(app) {
@@ -409,10 +397,10 @@ function renderCard(app) {
   const badge = h('span', { class: 'seen-badge', title: 'حمّلته على هذا الجهاز', 'data-seen': app.id, hidden: !state.seen.has(app.id) },
     icon('check'), h('span', { class: 'sr', text: 'حمّلته على هذا الجهاز' }));
 
-  const chips = h('div', { class: 'chips' }, h('span', { class: 'chip', text: 'APK' }));
-  if (app.minAndroid) chips.append(h('span', { class: 'chip chip--ltr', text: 'Android ' + app.minAndroid + '+' }));
-  if (app.version) chips.append(h('span', { class: 'chip chip--ltr', text: 'v' + app.version.replace(/^v/i, '') }));
+  const chips = h('div', { class: 'chips' }, h('span', { class: 'chip chip--apk', text: 'APK' }));
   if (app.size) chips.append(h('span', { class: 'chip chip--ltr', text: app.size }));
+  if (app.minAndroid) chips.append(h('span', { class: 'chip chip--ltr', text: 'Android ' + app.minAndroid + '+' }));
+  if (app.version) chips.append(h('span', { class: 'chip chip--ltr chip--ver', text: 'v' + app.version.replace(/^v/i, '') }));
 
   const foot = h('div', { class: 'card__foot' });
   if (Api.enabled) {
@@ -425,13 +413,13 @@ function renderCard(app) {
     h('button', { class: 'btn btn--link', type: 'button', 'data-act': 'details', 'data-id': app.id, text: 'التفاصيل والتحقق من الملف' }),
   );
 
-  const card = h('article', { class: 'card', 'aria-labelledby': 't-' + app.id, 'data-card': app.id },
+  return h('article', { class: 'card', 'aria-labelledby': 't-' + app.id, 'data-card': app.id },
     h('div', { class: 'card__iconwrap' }, h('div', { class: 'card__icon' }, img), badge),
-    h('h2', { class: 'card__name', id: 't-' + app.id, text: app.name }),
+    h('h2', { class: 'card__name', id: 't-' + app.id },
+      h('button', { class: 'card__open', type: 'button', 'data-act': 'details', 'data-id': app.id, text: app.name })),
     app.tagline ? h('p', { class: 'card__tag', text: app.tagline }) : null,
     chips,
     foot);
-  return card;
 }
 
 function renderGrid() {
@@ -510,9 +498,9 @@ function setSeen(ids) {
 }
 
 async function syncIdentity() {
-  if (!Api.enabled || state.privacy === 'off') return;
+  if (!Api.enabled) return;
   try {
-    const payload = await identityPayload(state.privacy);
+    const payload = await identityPayload();
     if (!payload.t && !(payload.f && payload.q)) return;
     const r = await Api.call('/api/identify', { method: 'POST', body: payload });
     if (r.t) Identity.write(r.t);
@@ -529,10 +517,12 @@ function phaseOf(id) {
 
 function setDlUi(id, phase) {
   if (!ID_RE.test(id)) return;
+  const long = phase === 'busy' ? 'جارٍ التحضير…' : phase === 'started' ? 'بدأ التحميل ✓' : (state.seen.has(id) ? 'تحميل مرة أخرى' : 'تحميل التطبيق');
+  const short = phase === 'busy' ? 'جارٍ…' : phase === 'started' ? 'بدأ ✓' : 'تحميل';
   for (const btn of $$(`[data-dl="${id}"]`)) {
-    const label = $('.btn__label', btn);
     if (phase === 'busy') btn.setAttribute('aria-busy', 'true'); else btn.removeAttribute('aria-busy');
-    label.textContent = phase === 'busy' ? 'جارٍ التحضير…' : phase === 'started' ? 'بدأ التحميل ✓' : (state.seen.has(id) ? 'تحميل مرة أخرى' : 'تحميل التطبيق');
+    $('.btn__label', btn).textContent = long;
+    $('.btn__short', btn).textContent = short;
   }
 }
 
@@ -549,34 +539,36 @@ async function startDownload(app) {
   state.dl.set(app.id, { ts: now, phase: 'busy' });
   setDlUi(app.id, 'busy');
 
-  let url = app.url;
-  const mode = state.privacy;
+  let url = '';
   try {
-    if (Api.enabled && mode !== 'off') {
-      const body = { a: app.id, ...(await identityPayload(mode)) };
-      const r = await Api.call('/api/ticket', { method: 'POST', body, timeout: 12000 });
-      if (r.t) Identity.write(r.t);
-      const tu = new URL(r.u);
-      if (tu.origin !== new URL(Api.base).origin || !/^\/dl\/[\w.-]+$/.test(tu.pathname)) throw new Error('bad_ticket_url');
-      url = tu.href;
-      if (r.seen) {
-        if (!state.seen.has(app.id)) setSeen([...state.seen, app.id]);
-        toast('info', 'بدأ التحميل. حمّلت هذا التطبيق من جهازك سابقاً، لذلك لن يزيد العدّاد.');
-      } else if (r.counted) {
-        toast('ok', `بدأ تحميل «${app.name}». سيُحتسب بعد اكتمال وصول الملف.`);
-        watchCompletion(app);
-      } else {
-        toast('warn', 'بدأ التحميل دون احتسابه في العدّاد الآن بسبب كثرة الطلبات من شبكتك.');
-      }
-    } else if (Api.enabled) {
-      toast('info', `بدأ تحميل «${app.name}» مباشرة دون احتسابه (وضع «بدون تعريف»).`);
+    if (!Api.enabled) throw new Error('no_api');
+    const body = { a: app.id, ...(await identityPayload()) };
+    const r = await Api.call('/api/ticket', { method: 'POST', body, timeout: 12000 });
+    if (r.t) Identity.write(r.t);
+    const tu = new URL(r.u);
+    if (tu.origin !== new URL(Api.base).origin || !/^\/dl\/[\w.-]+$/.test(tu.pathname)) throw new Error('bad_ticket_url');
+    url = tu.href;
+    if (r.seen) {
+      if (!state.seen.has(app.id)) setSeen([...state.seen, app.id]);
+      toast('info', 'بدأ التحميل. حمّلت هذا التطبيق من جهازك سابقاً، لذلك لن يزيد العدّاد.');
+    } else if (r.counted) {
+      toast('ok', `بدأ تحميل «${app.name}». سيُحتسب بعد اكتمال وصول الملف.`);
+      watchCompletion(app);
     } else {
-      toast('ok', `بدأ تحميل «${app.name}».`);
+      toast('warn', 'بدأ التحميل دون احتسابه في العدّاد الآن بسبب كثرة الطلبات من شبكتك.');
     }
   } catch (e) {
-    // العدّاد ثانوي: لا نمنع المستخدم أبداً من التحميل
+    if (!app.url) { // لا رابط احتياطي عمداً (روابط المصدر مخفية داخل الخادم)
+      state.dl.set(app.id, { ts: now, phase: 'idle' });
+      setDlUi(app.id, 'idle');
+      toast('err', e.status === 429 ? 'محاولات كثيرة من شبكتك. حاول بعد دقائق.'
+        : Api.enabled ? 'تعذّر بدء التحميل الآن. تحقق من اتصالك وأعد المحاولة بعد قليل.' : 'لم يُضبط رابط تحميل هذا التطبيق بعد.');
+      return;
+    }
     url = app.url;
-    toast('warn', e.status === 429 ? 'محاولات كثيرة؛ سيبدأ التحميل المباشر دون احتسابه.' : 'تعذّر الاتصال بعدّاد التحميل؛ سيبدأ التحميل المباشر دون احتسابه.');
+    toast(Api.enabled ? 'warn' : 'ok', !Api.enabled ? `بدأ تحميل «${app.name}».`
+      : e.status === 429 ? 'محاولات كثيرة؛ سيبدأ التحميل المباشر دون احتسابه.'
+      : 'تعذّر الاتصال بعدّاد التحميل؛ سيبدأ التحميل المباشر دون احتسابه.');
   }
 
   triggerDownload(url);
@@ -639,16 +631,13 @@ function buildAppSheet(app) {
     cta.append(h('p', { class: 'sheet__hint' }, icon('ok'), h('span', { text: 'حمّلت هذا التطبيق من هذا الجهاز سابقاً. إعادة التحميل لن تزيد العدّاد.' })));
   }
 
-  let host = '';
-  try { host = new URL(app.url).host; } catch { /* تجاهل */ }
   const count = Api.enabled && state.countsKnown ? fmtInt(state.counts[app.id] || 0) + ' جهاز' : '';
   const facts = h('dl', { class: 'facts' },
     fact('الإصدار', app.version ? 'v' + app.version.replace(/^v/i, '') : '', true),
     fact('حجم الملف', app.size, true),
     fact('يتطلب أندرويد', app.minAndroid ? app.minAndroid + ' فأحدث' : ''),
     fact('آخر تحديث', fmtDate(app.updated)),
-    fact('عدد التحميلات', count),
-    fact('مصدر الملف', host, true));
+    fact('عدد التحميلات', count));
 
   const body = [head, cta, facts.children.length ? facts : null];
   if (app.description) body.push(h('section', { class: 'block' }, h('h3', { class: 'block__title', text: 'عن التطبيق' }), h('p', { text: app.description })));
@@ -673,6 +662,7 @@ function openApp(id, opener) {
   dlg.append(buildAppSheet(app));
   state.opener = opener || document.activeElement;
   if (!dlg.open) dlg.showModal();
+  dlg.tabIndex = -1; dlg.focus({ preventScroll: true }); // التركيز على النافذة نفسها لا على زر الإغلاق
   setDlUi(id, phaseOf(id));
   try { history.replaceState(null, '', '#' + id); } catch { /* تجاهل */ }
 }
@@ -680,31 +670,9 @@ function openApp(id, opener) {
 // ───────────────────────── 11) الخصوصية ─────────────────────────
 function openPrivacy() {
   const dlg = $('#dlg-privacy');
-  const explicit = store.get(K.privacy);
-  $('#gpc-note').hidden = !(navigator.globalPrivacyControl === true && !explicit);
-  const radio = $(`input[name="privacy"][value="${state.privacy}"]`, dlg);
-  if (radio) radio.checked = true;
   state.opener = document.activeElement;
   if (!dlg.open) dlg.showModal();
-}
-
-async function forgetMe(btn) {
-  if (!btn.dataset.armed) {
-    btn.dataset.armed = '1'; btn.textContent = 'اضغط مرة أخرى للتأكيد';
-    setTimeout(() => { delete btn.dataset.armed; btn.textContent = 'حذف بياناتي من العدّاد'; }, 4500);
-    return;
-  }
-  delete btn.dataset.armed; btn.textContent = 'حذف بياناتي من العدّاد';
-  try {
-    const t = await Identity.read();
-    if (t && Api.enabled) await Api.call('/api/forget', { method: 'POST', body: { t } });
-  } catch { toast('err', 'تعذّر الاتصال بالخادم لحذف بياناتك. حاول مرة أخرى لاحقاً.'); return; }
-  await Identity.clear();
-  store.del(K.seen);
-  setSeen([]);
-  await refreshStats();
-  for (const app of state.apps) setDlUi(app.id, phaseOf(app.id));
-  toast('ok', 'تم حذف بياناتك من العدّاد ومن هذا المتصفح.');
+  dlg.tabIndex = -1; dlg.focus({ preventScroll: true });
 }
 
 // ───────────────────────── 12) التهيئة وربط الأحداث ─────────────────────────
@@ -750,11 +718,16 @@ function bindUi() {
   // أزرار البطاقات والنوافذ (تفويض أحداث)
   document.addEventListener('click', (e) => {
     const t = e.target.closest('[data-act], [data-close]');
-    if (!t) return;
-    if (t.hasAttribute('data-close')) { t.closest('dialog').close(); return; }
-    const act = t.dataset.act;
-    if (act === 'download') { const app = state.byId.get(t.dataset.dl); if (app) startDownload(app); }
-    if (act === 'details') openApp(t.dataset.id, t);
+    if (t) {
+      if (t.hasAttribute('data-close')) { t.closest('dialog').close(); return; }
+      const act = t.dataset.act;
+      if (act === 'download') { const app = state.byId.get(t.dataset.dl); if (app) startDownload(app); }
+      if (act === 'details') openApp(t.dataset.id, t);
+      return;
+    }
+    // على الجوال: لمس أي مكان في صف التطبيق يفتح تفاصيله (زر التحميل له وظيفته الخاصة)
+    const card = e.target.closest('.card[data-card]');
+    if (card && MOBILE.matches && !e.target.closest('a, button')) openApp(card.dataset.card, card.querySelector('.card__open'));
   });
 
   // نوافذ: إغلاق بالنقر على الخلفية + إرجاع التركيز + تنظيف الرابط
@@ -765,16 +738,6 @@ function bindUi() {
       if (state.opener && state.opener.isConnected) state.opener.focus();
     });
   }
-  for (const r of $$('input[name="privacy"]')) {
-    r.addEventListener('change', () => {
-      state.privacy = r.value; store.set(K.privacy, r.value);
-      $('#gpc-note').hidden = true;
-      toast('ok', 'تم حفظ اختيارك.');
-      if (r.value !== 'off') syncIdentity();
-    });
-  }
-  $('#btn-forget').addEventListener('click', (e) => forgetMe(e.currentTarget));
-
   // الصعود للأعلى
   const top = $('#totop');
   let ticking = false;
@@ -799,8 +762,6 @@ async function boot() {
   try { cat = await loadCatalog(); } catch (e) { return showFatal(e); }
 
   state.apps = cat.apps; state.byId = cat.byId; Api.base = cat.api;
-  if (cat.github) { state.site.github = cat.github; $$('.foot__links a').forEach((a) => { a.href = cat.github; }); }
-  state.privacy = getPrivacy();
 
   try { const cached = JSON.parse(store.get(K.seen) || '[]'); if (Array.isArray(cached)) state.seen = new Set(cached.filter((id) => state.byId.has(id))); } catch { /* تجاهل */ }
 
