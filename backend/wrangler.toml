@@ -5,12 +5,12 @@ compatibility_date = "2025-06-01"
 
 [vars]
 # رابط موقعك كاملاً (يجب أن ينتهي بـ / ويوجد فيه الملف apps.json)
-SITE_URL = "https://YOUR-NAME.github.io/YOUR-REPO/"
+SITE_URL = "https://ossamasal2012.github.io/app"
 # origins إضافية مسموحة (اختياري)، مثال: "https://my-domain.com,http://localhost:8000"
 ALLOWED_ORIGINS = ""
 # المضيفون المسموح بجلب ملفات APK منهم
 UPSTREAM_HOSTS = "github.com"
-# proxy = يحتسب بعد اكتمال وصول الملف (الأدق)  |  redirect = يحتسب عند بدء التحميل
+# proxy = يحتسب بعد اكتمال وصول الملف (الأدق ويُخفي رابط المصدر)  |  redirect = يحتسب عند البدء ويكشف رابط المصدر
 DOWNLOAD_MODE = "proxy"
 
 [[d1_databases]]
@@ -24,4 +24,6 @@ crons = ["17 3 * * *"]
 
 # الأسرار لا توضع هنا. نفّذ:
 #   npx wrangler secret put SECRET       (نص عشوائي طويل)
+#   npx wrangler secret put SOURCES      (روابط ملفات APK بصيغة JSON، تبقى مخفية عن الزوّار)
+#       {"yalla-goal":"https://github.com/…/app.apk","second-challenge":"https://…"}
 #   npx wrangler secret put ADMIN_KEY    (اختياري: لعرض التقرير)
