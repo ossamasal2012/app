@@ -21,6 +21,15 @@
       "minAndroid": "5.0",
       "sizeBytes": 11323251,
       "updated": "2026-09-10"
+      },
+    {
+      "id": "Weather",
+      "name": "الطقس - weather ",
+      "icon": "https://raw.githubusercontent.com/ossamasal2012/weather/refs/heads/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "downloadUrl": "https://github.com/ossamasal2012/weather/releases/download/latest/weather.apk",
+      "minAndroid": "8.0",
+      "sizeBytes": 29000,
+      "updated": "2026-09-20"
     }
   ]
 }
