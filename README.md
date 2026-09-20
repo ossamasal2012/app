@@ -37,13 +37,13 @@ _headers                 ترويسات أمان كاملة (Cloudflare Pages / 
 | `SOURCES` | **Secret** | روابط ملفات APK الحقيقية بصيغة JSON (انظر تحت) |
 | `ADMIN_KEY` | Secret (اختياري) | لعرض تقرير الإدارة |
 
-قيمة `SOURCES` (سطر واحد، الأسماء هي `id` كل تطبيق في `apps.json`):
+قيمة `SOURCES` هي قائمة سرّية بأماكن ملفات APK الحقيقية، تلصقها كما هي في سطر واحد (الأسماء هي `id` كل تطبيق في `apps.json`). اختر لها النوع **Secret** (يقبل الخادم Text أو JSON أيضاً). وعند إضافة تطبيق جديد أضف إليها عنصراً جديداً مفصولاً بفاصلة:
 
 ```
-{"yalla-goal":"https://github.com/USER/REPO/releases/download/TAG/app-release.apk","second-challenge":"https://github.com/USER/REPO/releases/latest/download/app-release.apk"}
+{"yalla-goal":"https://github.com/ossamasal2012/otv/releases/download/latest/app-release.apk","second-challenge":"https://github.com/ossamasal2012/time/releases/latest/download/app-release.apk","weather":"https://github.com/ossamasal2012/weather/releases/download/latest/weather.apk"}
 ```
 
-5. افتح `https://ossama-store-api.<حسابك>.workers.dev/api/health` فيجب أن ترى `"ok":true` و`"apps":` بعدد تطبيقاتك. إن كان `apps: 0` فالمتغيّر `SOURCES` ناقص أو فيه خطأ، وإن ظهر `db:false` أو `secret:false` أو `site:false` فالمتغيّر المقابل ناقص.
+5. افتح `https://ossama-store-api.<حسابك>.workers.dev/api/health` فيجب أن ترى `"ok":true` و`"apps":` بعدد تطبيقاتك. إن كان `apps: 0` (أو `sources: 0`) فالمتغيّر `SOURCES` ناقص أو فيه خطأ، وإن ظهر `db:false` أو `secret:false` أو `site:false` فالمتغيّر المقابل ناقص.
 6. ضع رابط الـ Worker (بدون `/` في آخره) في `apps.json` داخل `"api"`.
 
 **إن كنت نشرت النسخة السابقة:** الصق `worker.js` الجديد أولاً وأضف `SOURCES`، ثم ارفع ملفات الموقع الجديدة.
@@ -117,7 +117,7 @@ _headers                 ترويسات أمان كاملة (Cloudflare Pages / 
 
 ## 11) اختبارات أُجريت على هذه النسخة
 
-- خادم العدّاد في بيئة workerd الحقيقية مع D1: 48 فحصاً (تكرار، إلغاء منتصف التحميل، استعادة الجهاز، التلاعب بالتذاكر، حدود المعدّل، أولوية `SOURCES` السرّي، توحيد المعرّفات، غياب أي نقطة حذف).
+- خادم العدّاد في بيئة workerd الحقيقية مع D1: 50 فحصاً (تكرار، إلغاء منتصف التحميل، استعادة الجهاز، التلاعب بالتذاكر، حدود المعدّل، أولوية `SOURCES` السرّي، توحيد المعرّفات، غياب أي نقطة حذف).
 - متصفح حقيقي (Chromium يحاكي هواتف أندرويد) مع الخادم: 43 فحصاً (نقرات متكررة، اكتمال، مسح البيانات، جهاز آخر، تطبيق ثالث بمعرّف بحرف كبير، وضع الخصوصية الوحيد، غياب أي أثر لـ GitHub، تعطّل الخادم، وحجم صفوف الجوال وأيقوناته).
 - فحص إمكانية الوصول (axe-core، WCAG AA) بلا مخالفات في المظهرين الداكن والفاتح ولكل النوافذ.
 - لم يُجرَّب على Cloudflare الفعلي ولا على هواتف حقيقية؛ اختبر بعد النشر: حمّل من هاتفك وراقب `/api/stats`.
