@@ -11,7 +11,9 @@
       "downloadUrl": "https://github.com/ossamasal2012/otv/releases/download/latest/app-release.apk",
       "minAndroid": "5.0",
       "sizeBytes": 8682567,
-      "updated": "2026-09-04"
+      "updated": "2026-09-04",
+      "sha256": "6099fb5d5ba4f9aeda2a66c9ad713c24317484158019b16b50d9d728cce9ad5a",
+      "checked": "2026-09-20"
     },
     {
       "id": "second-challenge",
@@ -20,16 +22,20 @@
       "downloadUrl": "https://github.com/ossamasal2012/time/releases/latest/download/app-release.apk",
       "minAndroid": "5.0",
       "sizeBytes": 11323251,
-      "updated": "2026-09-10"
-      },
+      "updated": "2026-09-10",
+      "sha256": "46e2fc4246473d8bfc2f8b55142297b13f80b13be5ff709730e5013d8959c0e6",
+      "checked": "2026-09-20"
+    },
     {
       "id": "Weather",
       "name": "الطقس - weather ",
       "icon": "https://raw.githubusercontent.com/ossamasal2012/weather/refs/heads/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
       "downloadUrl": "https://github.com/ossamasal2012/weather/releases/download/latest/weather.apk",
       "minAndroid": "8.0",
-      "sizeBytes": 2900000,
-      "updated": "2026-09-20"
+      "sizeBytes": 2990744,
+      "updated": "2026-09-19",
+      "sha256": "d2ca63c0fde76a0f5ad28b88951c34ca5176f55f3545cf9e022e164dc0415959",
+      "checked": "2026-09-20"
     }
   ]
 }
