@@ -10,11 +10,14 @@
  *   4) لا يُحتسب التحميل إلا بعد وصول ملف الـ APK كاملاً (بثّ عبر الخادم).
  *   5) التعرّف على الجهاز بعد مسح بيانات المتصفح: بصمة تقنية + الشبكة نفسها.
  *   6) حدود معدّل + التحقق من Origin + توقيع HMAC ضد التلاعب.
+ *   7) لا توجد أي نقطة لحذف السجلات من جهة الزوّار: الإحصاءات دائمة ودقيقة.
  *
  *  المتغيرات المطلوبة (Settings ← Variables and Secrets):
  *    DB        ربط قاعدة D1 (Binding)  — الاسم DB بالضبط
  *    SECRET    (Secret) نص عشوائي طويل لا تشاركه مع أحد (32 حرفاً فأكثر)
  *    SITE_URL  (Text)   رابط موقعك كاملاً ويوجد فيه apps.json، ويُفضّل أن ينتهي بـ /
+ *    SOURCES   (Secret) روابط ملفات APK الحقيقية بصيغة JSON، وبهذا لا تظهر في موقعك أبداً:
+ *              {"yalla-goal":"https://github.com/…/app.apk","second-challenge":"https://…"}
  *  اختيارية:
  *    ADMIN_KEY, ALLOWED_ORIGINS, UPSTREAM_HOSTS, DOWNLOAD_MODE  (انظر README)
  */
@@ -32,7 +35,6 @@ const LIMITS = {
   newDevicePerNet: [60, 3600],
   downloadPerNet: [150, 3600],
   downloadPerDevice: [12, 3600],
-  forgetPerNet: [20, 3600],
 };
 
 const HEX32 = /^[0-9a-f]{32}$/;
@@ -88,7 +90,6 @@ async function route(request, env, ctx, cors) {
     requireOrigin(request, env); // كل نقاط POST الأخرى لا تعمل إلا من موقعك فقط
     if (pathname === '/api/identify') return handleIdentify(request, env, cors);
     if (pathname === '/api/ticket') return handleTicket(request, env, ctx, cors);
-    if (pathname === '/api/forget') return handleForget(request, env, cors);
   }
 
   throw new HttpError(404, 'not_found');
@@ -110,7 +111,7 @@ async function handleHealth(env, cors) {
   const out = { ok: true, db: false, secret: !!(env.SECRET && env.SECRET.length >= 16), site: false, apps: 0 };
   try { await db(env).prepare('SELECT 1').first(); out.db = true; } catch { /* يبقى false */ }
   try { out.apps = (await getCatalog(env)).size; out.site = true; } catch { /* يبقى false */ }
-  out.ok = out.db && out.secret && out.site;
+  out.ok = out.db && out.secret && out.site && out.apps > 0;
   return json(out, out.ok ? 200 : 503, cors);
 }
 
@@ -130,7 +131,7 @@ async function handleIdentify(request, env, cors) {
 // طلب تذكرة تحميل: هنا يُنشأ الجهاز (إن لزم) وتُطبَّق حدود المعدّل
 async function handleTicket(request, env, ctx, cors) {
   const body = await readJson(request);
-  const app = (await getCatalog(env)).get(str(body.a, 40));
+  const app = (await getCatalog(env)).get(normId(body.a));
   if (!app) throw new HttpError(404, 'unknown_app');
 
   const net = netKey(request);
@@ -172,23 +173,6 @@ async function handleTicket(request, env, ctx, cors) {
     seen,
     counted,
   }, 200, cors);
-}
-
-// حق الحذف: يمسح كل ما يخص الجهاز ويُنقص العدّادات تبعاً لذلك
-async function handleForget(request, env, cors) {
-  const body = await readJson(request);
-  const netId = await mac(env, 'net', netKey(request), 12);
-  await enforce(env, 'fg', netId, LIMITS.forgetPerNet);
-  const id = await verifyToken(env, body.t);
-  if (id) {
-    await db(env).batch([
-      db(env).prepare('UPDATE app_counts SET total = MAX(total - (SELECT COUNT(*) FROM downloads WHERE downloads.device_id = ?1 AND downloads.app_id = app_counts.app_id), 0)').bind(id),
-      db(env).prepare('DELETE FROM downloads WHERE device_id = ?1').bind(id),
-      db(env).prepare('DELETE FROM links WHERE device_id = ?1').bind(id),
-      db(env).prepare('DELETE FROM devices WHERE id = ?1').bind(id),
-    ]);
-  }
-  return json({ ok: true }, 200, cors);
 }
 
 // ───────────────────────── التحميل (قلب النظام) ─────────────────────────
@@ -372,11 +356,16 @@ async function getCatalog(env) {
     });
     if (!res.ok) throw new Error('catalog_http_' + res.status);
     const data = await res.json();
+    const sources = {};
+    for (const [k, v] of Object.entries(parseSources(env))) sources[normId(k)] = v; // مفاتيح SOURCES توحَّد أيضاً
     const map = new Map();
     for (const a of Array.isArray(data.apps) ? data.apps : []) {
-      if (!a || !APP_ID_RE.test(a.id) || !upstreamAllowed(a.downloadUrl, env)) continue;
-      const file = String(a.apkName || a.id + '.apk').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 80);
-      map.set(a.id, { id: a.id, url: a.downloadUrl, file: /\.apk$/i.test(file) ? file : file + '.apk' });
+      const id = normId(a && a.id);
+      if (!APP_ID_RE.test(id) || map.has(id)) continue;
+      const url = typeof sources[id] === 'string' ? sources[id] : a.downloadUrl; // السري له الأولوية
+      if (!upstreamAllowed(url, env)) continue;
+      const file = String(a.apkName || id + '.apk').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 80);
+      map.set(id, { id, url, file: /\.apk$/i.test(file) ? file : file + '.apk' });
     }
     catalogCache = { at: Date.now(), map };
     return map;
@@ -385,6 +374,15 @@ async function getCatalog(env) {
     console.error('catalog_error', e && e.message);
     throw new HttpError(503, 'catalog_unavailable');
   }
+}
+
+// روابط الملفات الحقيقية تُحفَظ في متغيّر سرّي SOURCES فلا تظهر لأي زائر ولا في apps.json
+function parseSources(env) {
+  if (!env.SOURCES) return {};
+  try {
+    const o = JSON.parse(env.SOURCES);
+    return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+  } catch { console.error('sources_invalid_json'); return {}; }
 }
 
 // حماية من SSRF: لا نجلب إلا من مضيفين تحددهم أنت (github.com افتراضياً) وعبر https
@@ -443,7 +441,10 @@ function db(env) {
 
 function nowSec() { return Math.floor(Date.now() / 1000); }
 
-function str(v, max) { return typeof v === 'string' ? v.slice(0, max) : ''; }
+// المعرّف: أحرف إنجليزية صغيرة وأرقام وشرطة فقط (Weather → weather)
+function normId(v) {
+  return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
 
 async function readJson(request) {
   const text = await request.text();
