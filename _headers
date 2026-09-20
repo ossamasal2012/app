@@ -1,0 +1,16 @@
+# ترويسات الأمان الكاملة — تعمل تلقائياً على Cloudflare Pages وNetlify.
+# (GitHub Pages لا يدعم ملف _headers؛ يكفيه وسم CSP الموجود داخل index.html.)
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://*.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+/apps.json
+  Cache-Control: no-cache
+
+/assets/*
+  Cache-Control: public, max-age=3600
