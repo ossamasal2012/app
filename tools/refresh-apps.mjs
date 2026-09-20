@@ -2,7 +2,10 @@
 /**
  * يحدّث داخل apps.json: حجم الملف (sizeBytes) وتاريخ آخر تعديل (updated) وبصمة SHA-256 (sha256).
  * الاستخدام:   node tools/refresh-apps.mjs [مسار apps.json]
- * يحتاج Node 18 فأحدث. لا يثبّت أي حزمة، ولا يقرأ إلا الروابط المكتوبة في apps.json (https + github.com فقط).
+ * يحتاج Node 18 فأحدث. لا يثبّت أي حزمة (https + github.com فقط).
+ * روابط الملفات تُقرأ من المتغيّر السرّي APP_SOURCES بصيغة JSON مثل:
+ *     {"yalla-goal":"https://github.com/…/app.apk","second-challenge":"https://…"}
+ * وإن لم يوجد فمن الحقل downloadUrl داخل apps.json (إن كنت تضعه علناً).
  */
 import fs from 'node:fs';
 import crypto from 'node:crypto';
@@ -13,11 +16,15 @@ const MAX_BYTES = 300 * 1024 * 1024;
 const today = new Date().toISOString().slice(0, 10);
 
 const data = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+let sources = {};
+try { sources = JSON.parse(process.env.APP_SOURCES || '{}'); } catch { console.error('APP_SOURCES ليس JSON صالحاً'); process.exit(1); }
 let changedAny = false;
 
 for (const app of data.apps || []) {
   try {
-    const u = new URL(app.downloadUrl);
+    const link = sources[app.id] || app.downloadUrl;
+    if (!link) { console.log(`- ${app.id}: لا رابط مصدر (ضعه في APP_SOURCES)، تخطّي`); continue; }
+    const u = new URL(link);
     if (u.protocol !== 'https:' || !ALLOWED_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith('.' + h))) {
       console.log(`- ${app.id}: مضيف غير مسموح، تخطّي`);
       continue;
