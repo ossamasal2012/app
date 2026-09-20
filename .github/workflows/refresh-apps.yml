@@ -1,4 +1,5 @@
 # يحدّث بصمات SHA-256 وأحجام وتواريخ التطبيقات في apps.json تلقائياً كل 6 ساعات (وعند الطلب يدوياً).
+# يحتاج سرّاً اسمه APP_SOURCES (Settings ← Secrets and variables ← Actions) فيه روابط ملفات APK بصيغة JSON.
 # للتشغيل اليدوي: تبويب Actions ← «تحديث بصمات التطبيقات» ← Run workflow.
 name: تحديث بصمات التطبيقات
 
@@ -19,6 +20,8 @@ jobs:
         with:
           node-version: 20
       - name: احسب البصمات
+        env:
+          APP_SOURCES: ${{ secrets.APP_SOURCES }}
         run: node tools/refresh-apps.mjs apps.json
       - name: احفظ التغييرات إن وُجدت
         run: |
