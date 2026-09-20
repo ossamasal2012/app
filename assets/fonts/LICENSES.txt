@@ -1,0 +1,6 @@
+الخطوط المضمّنة في هذا المجلد مرخّصة بموجب SIL Open Font License 1.1 (يُسمح بالاستخدام والتضمين والتوزيع):
+
+- Reem Kufi — Copyright 2015-2022 The Reem Kufi Project Authors (https://github.com/aliftype/reem-kufi)
+- Readex Pro — Copyright 2021 The Readex Pro Project Authors (https://github.com/thomasjockin/readexpro)
+
+نص الترخيص الكامل: https://openfontlicense.org
