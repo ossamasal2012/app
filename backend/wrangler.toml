@@ -1,0 +1,27 @@
+# ═══ إعداد النشر بواسطة سطر الأوامر (اختياري — يمكنك استخدام لوحة Cloudflare بدلاً منه) ═══
+name = "ossama-store-api"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+# رابط موقعك كاملاً (يجب أن ينتهي بـ / ويوجد فيه الملف apps.json)
+SITE_URL = "https://YOUR-NAME.github.io/YOUR-REPO/"
+# origins إضافية مسموحة (اختياري)، مثال: "https://my-domain.com,http://localhost:8000"
+ALLOWED_ORIGINS = ""
+# المضيفون المسموح بجلب ملفات APK منهم
+UPSTREAM_HOSTS = "github.com"
+# proxy = يحتسب بعد اكتمال وصول الملف (الأدق)  |  redirect = يحتسب عند بدء التحميل
+DOWNLOAD_MODE = "proxy"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ossama-store"
+database_id = "PASTE-YOUR-D1-DATABASE-ID"
+
+# تنظيف يومي للبيانات القديمة (اختياري)
+[triggers]
+crons = ["17 3 * * *"]
+
+# الأسرار لا توضع هنا. نفّذ:
+#   npx wrangler secret put SECRET       (نص عشوائي طويل)
+#   npx wrangler secret put ADMIN_KEY    (اختياري: لعرض التقرير)
