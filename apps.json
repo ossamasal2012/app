@@ -1,14 +1,10 @@
 {
-  "site": {
-    "github": "https://github.com/ossamasal2012"
-  },
   "api": "https://ossama-store-api.ossamasal2012.workers.dev",
   "apps": [
     {
       "id": "yalla-goal",
       "name": "يلا گول",
       "icon": "https://i.ibb.co/CKJ5NVv7/Screenshot-2026-04-21-1-52-19-PM.png",
-      "downloadUrl": "https://github.com/ossamasal2012/otv/releases/download/latest/app-release.apk",
       "minAndroid": "5.0",
       "sizeBytes": 8682567,
       "updated": "2026-09-04",
@@ -18,8 +14,7 @@
     {
       "id": "second-challenge",
       "name": "تحدي الثانية",
-      "icon": "https://raw.githubusercontent.com/ossamasal2012/time/refs/heads/main/www/assets/images/logo.png",
-      "downloadUrl": "https://github.com/ossamasal2012/time/releases/latest/download/app-release.apk",
+      "icon": "assets/icons/second-challenge.webp",
       "minAndroid": "5.0",
       "sizeBytes": 11323251,
       "updated": "2026-09-10",
@@ -27,10 +22,9 @@
       "checked": "2026-09-20"
     },
     {
-      "id": "Weather",
-      "name": "الطقس - weather ",
-      "icon": "https://raw.githubusercontent.com/ossamasal2012/weather/refs/heads/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
-      "downloadUrl": "https://github.com/ossamasal2012/weather/releases/download/latest/weather.apk",
+      "id": "weather",
+      "name": "الطقس - weather",
+      "icon": "assets/icons/weather.webp",
       "minAndroid": "8.0",
       "sizeBytes": 2990744,
       "updated": "2026-09-19",
