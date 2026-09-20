@@ -1,0 +1,31 @@
+# يحدّث بصمات SHA-256 وأحجام وتواريخ التطبيقات في apps.json تلقائياً كل 6 ساعات (وعند الطلب يدوياً).
+# للتشغيل اليدوي: تبويب Actions ← «تحديث بصمات التطبيقات» ← Run workflow.
+name: تحديث بصمات التطبيقات
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 */6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: احسب البصمات
+        run: node tools/refresh-apps.mjs apps.json
+      - name: احفظ التغييرات إن وُجدت
+        run: |
+          if [ -n "$(git status --porcelain apps.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add apps.json
+            git commit -m "chore: تحديث بصمات وأحجام التطبيقات"
+            git push
+          fi
