@@ -2,7 +2,7 @@
   "site": {
     "github": "https://github.com/ossamasal2012"
   },
-  "api": "",
+  "api": "https://ossama-store-api.ossamasal2012.workers.dev",
   "apps": [
     {
       "id": "yalla-goal",
